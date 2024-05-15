@@ -7,7 +7,7 @@ import {
 import { DatabaseService } from 'src/database/database.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user-dto';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { addDays, isBefore } from 'date-fns';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 
@@ -31,15 +31,11 @@ export class AuthService {
     return isBefore(new Date(expiration), new Date());
   }
 
-  private async generateToken(payload: { id: string; email: string }) {
-    return {
-      accessToken: await this.jwtService.signAsync(payload, {
-        expiresIn: '10h',
-      }),
-      refreshToken: await this.jwtService.signAsync(payload, {
-        expiresIn: '7d',
-      }),
-    };
+  private async generateToken(
+    { userId, type }: { userId: string; type: 'accessToken' | 'refreshToken' },
+    options?: JwtSignOptions,
+  ) {
+    return await this.jwtService.signAsync({ userId, type }, options);
   }
 
   async register(registerUserDto: RegisterUserDto) {
@@ -74,17 +70,16 @@ export class AuthService {
     if (!passwordMatch)
       throw new BadRequestException('Invalid Email or Password');
 
-    const payload = {
-      id: user.id,
-      email: user.email,
-    };
-
-    const tokens = await this.generateToken(payload);
-
     const session = await this.prisma.session.create({
       data: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
+        accessToken: await this.generateToken(
+          { userId: user.id, type: 'accessToken' },
+          { expiresIn: '10h' },
+        ),
+        refreshToken: await this.generateToken(
+          { userId: user.id, type: 'refreshToken' },
+          { expiresIn: '7d' },
+        ),
         expires: addDays(new Date(), 6),
         userId: user.id,
       },
@@ -104,15 +99,14 @@ export class AuthService {
     if (this.isSessionExpired(session.expires))
       throw new BadRequestException('Session already expired.');
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: session.userId },
-    });
-
-    const tokens = await this.generateToken({ id: user.id, email: user.email });
-
     const { accessToken } = await this.prisma.session.update({
       where: { id: session.id },
-      data: { accessToken: tokens.refreshToken },
+      data: {
+        accessToken: await this.generateToken(
+          { userId: session.userId, type: 'accessToken' },
+          { expiresIn: '10h' },
+        ),
+      },
     });
 
     return { accessToken };
