@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [DatabaseModule, AuthModule, ConfigModule.forRoot()],
-  providers: [DatabaseService],
+    imports: [DatabaseModule, AuthModule, ConfigModule.forRoot()],
+    providers: [DatabaseService],
 })
 export class AppModule {}
