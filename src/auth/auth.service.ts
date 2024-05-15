@@ -111,4 +111,14 @@ export class AuthService {
 
     return { accessToken };
   }
+
+  async logout(token: string) {
+    if (!token) throw new BadRequestException('The user is not logged in.');
+
+    await this.prisma.session.delete({
+      where: { accessToken: token },
+    });
+
+    return { message: 'User successfully logged out' };
+  }
 }

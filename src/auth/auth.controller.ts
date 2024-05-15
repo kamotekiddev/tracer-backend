@@ -1,4 +1,12 @@
-import { Body, Controller, Patch, Post, ValidationPipe } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Headers,
+  Patch,
+  Post,
+  ValidationPipe,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user-dto';
@@ -21,5 +29,12 @@ export class AuthController {
   @Patch('refresh')
   refresh(@Body(ValidationPipe) refreshTokenDto: RefreshTokenDto) {
     return this.authService.refresh(refreshTokenDto);
+  }
+
+  @Delete('logout')
+  logout(@Headers() headers: any) {
+    const [, token] = headers?.authorization?.split(' ') ?? [];
+
+    return this.authService.logout(token);
   }
 }
