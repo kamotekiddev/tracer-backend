@@ -8,6 +8,8 @@ import { DatabaseService } from 'src/database/database.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user-dto';
 import { JwtService } from '@nestjs/jwt';
+import { addDays, isBefore } from 'date-fns';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,21 @@ export class AuthService {
 
   private isPasswordMatch(password: string, hashedPassword: string) {
     return bcrypt.compare(password, hashedPassword);
+  }
+
+  private isSessionExpired(expiration: Date) {
+    return isBefore(new Date(expiration), new Date());
+  }
+
+  private async generateToken(payload: { id: string; email: string }) {
+    return {
+      accessToken: await this.jwtService.signAsync(payload, {
+        expiresIn: '10h',
+      }),
+      refreshToken: await this.jwtService.signAsync(payload, {
+        expiresIn: '7d',
+      }),
+    };
   }
 
   async register(registerUserDto: RegisterUserDto) {
@@ -62,10 +79,42 @@ export class AuthService {
       email: user.email,
     };
 
-    const accessToken = await this.jwtService.signAsync(payload);
+    const tokens = await this.generateToken(payload);
+
+    const session = await this.prisma.session.create({
+      data: {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expires: addDays(new Date(), 6),
+        userId: user.id,
+      },
+    });
 
     return {
-      accessToken,
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
     };
+  }
+
+  async refresh({ refreshToken }: RefreshTokenDto) {
+    const session = await this.prisma.session.findUnique({
+      where: { refreshToken },
+    });
+
+    if (this.isSessionExpired(session.expires))
+      throw new BadRequestException('Session already expired.');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.userId },
+    });
+
+    const tokens = await this.generateToken({ id: user.id, email: user.email });
+
+    const { accessToken } = await this.prisma.session.update({
+      where: { id: session.id },
+      data: { accessToken: tokens.refreshToken },
+    });
+
+    return { accessToken };
   }
 }
