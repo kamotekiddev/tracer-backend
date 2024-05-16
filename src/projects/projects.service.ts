@@ -37,8 +37,26 @@ export class ProjectsService {
         return this.prisma.project.findMany();
     }
 
-    findOne(id: number) {
-        return `This action returns a #${id} project`;
+    async findOne(id: string) {
+        const project = await this.prisma.project.findUnique({
+            where: { id },
+            include: { owner: true, members: true },
+        });
+
+        const ownerWithoutPassword = this.prisma.excludeProperties(
+            project.owner,
+            ['password'],
+        );
+
+        const membersWithoutPassword = project.members.map((member) =>
+            this.prisma.excludeProperties(member, ['password']),
+        );
+
+        return {
+            ...project,
+            owner: ownerWithoutPassword,
+            members: membersWithoutPassword,
+        };
     }
 
     update(id: number, updateProjectDto: UpdateProjectDto) {
