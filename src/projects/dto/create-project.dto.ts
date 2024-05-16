@@ -1,7 +1,8 @@
-import { ArrayMinSize, IsArray, IsString } from 'class-validator';
+import { ArrayMinSize, IsArray, IsString, MinLength } from 'class-validator';
 
 export class CreateProjectDto {
     @IsString()
+    @MinLength(5)
     name: string;
 
     @IsArray()
