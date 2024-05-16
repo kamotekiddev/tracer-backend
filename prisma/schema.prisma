@@ -46,7 +46,15 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ownerId String
-  owner   User   @relation("owner", fields: [ownerId], references: [id])
-  members User[] @relation("member")
+  ownerId    String
+  owner      User       @relation("owner", fields: [ownerId], references: [id])
+  members    User[]     @relation("member")
+  categories Category[]
+}
+
+model Category {
+  id        String  @id @default(uuid())
+  name      String
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String
 }
