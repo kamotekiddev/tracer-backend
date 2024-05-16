@@ -1,26 +1,51 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
 export class ProjectsService {
-  create(createProjectDto: CreateProjectDto) {
-    return 'This action adds a new project';
-  }
+    constructor(private readonly prisma: DatabaseService) {}
 
-  findAll() {
-    return `This action returns all projects`;
-  }
+    async create(ownerId: string, createProjectDto: CreateProjectDto) {
+        const { members, name } = createProjectDto;
 
-  findOne(id: number) {
-    return `This action returns a #${id} project`;
-  }
+        const projectExisted = await this.prisma.project.findUnique({
+            where: { name: name },
+        });
 
-  update(id: number, updateProjectDto: UpdateProjectDto) {
-    return `This action updates a #${id} project`;
-  }
+        if (projectExisted)
+            throw new BadRequestException(
+                'The project name is already been taken.',
+            );
 
-  remove(id: number) {
-    return `This action removes a #${id} project`;
-  }
+        return this.prisma.project.create({
+            data: {
+                name,
+                ownerId: ownerId,
+                members: {
+                    connect: [
+                        { id: ownerId },
+                        ...members.map((id) => ({ id })),
+                    ],
+                },
+            },
+        });
+    }
+
+    findAll() {
+        return this.prisma.project.findMany();
+    }
+
+    findOne(id: number) {
+        return `This action returns a #${id} project`;
+    }
+
+    update(id: number, updateProjectDto: UpdateProjectDto) {
+        return updateProjectDto;
+    }
+
+    remove(id: number) {
+        return `This action removes a #${id} project`;
+    }
 }

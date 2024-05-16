@@ -25,10 +25,8 @@ model User {
 
   sessions Session[]
 
-  ownedProjects Project[] @relation("owner")
-
-  projectId     String?
-  projectMember Project? @relation("members", fields: [projectId], references: [id])
+  ownedProjects    Project[] @relation("owner")
+  projectsAsMember Project[] @relation("member")
 }
 
 model Session {
@@ -44,11 +42,11 @@ model Session {
 
 model Project {
   id        String   @id @default(uuid())
-  name      String
+  name      String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   ownerId String
   owner   User   @relation("owner", fields: [ownerId], references: [id])
-  members User[] @relation("members")
+  members User[] @relation("member")
 }

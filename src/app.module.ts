@@ -6,7 +6,12 @@ import { ConfigModule } from '@nestjs/config';
 import { ProjectsModule } from './projects/projects.module';
 
 @Module({
-    imports: [DatabaseModule, AuthModule, ConfigModule.forRoot(), ProjectsModule],
+    imports: [
+        DatabaseModule,
+        AuthModule,
+        ConfigModule.forRoot(),
+        ProjectsModule,
+    ],
     providers: [DatabaseService],
 })
 export class AppModule {}
