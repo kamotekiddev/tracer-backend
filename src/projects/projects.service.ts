@@ -59,11 +59,52 @@ export class ProjectsService {
         };
     }
 
-    update(id: number, updateProjectDto: UpdateProjectDto) {
-        return updateProjectDto;
+    async update(id: string, updateProjectDto: UpdateProjectDto) {
+        const { members, name } = updateProjectDto;
+
+        const existingProject = await this.prisma.project.findUnique({
+            where: { id },
+            include: { members: true },
+        });
+
+        if (!existingProject)
+            throw new BadRequestException('This project does not exist.');
+
+        const memberIdsToAdd = members.filter(
+            (memberId) =>
+                !existingProject.members.some(
+                    (member) => member.id === memberId,
+                ),
+        );
+
+        const membersToRemove = existingProject.members.filter(
+            (member) => !members.includes(member.id),
+        );
+
+        const updatedProject = await this.prisma.project.update({
+            where: { id },
+            data: {
+                name,
+                members: {
+                    connect: memberIdsToAdd.map((id) => ({ id })),
+                    disconnect: membersToRemove.map(({ id }) => ({ id })),
+                },
+            },
+            include: { members: true },
+        });
+
+        const membersWithoutPassword = updatedProject.members.map((member) =>
+            this.prisma.excludeProperties(member, ['password']),
+        );
+
+        return { ...updatedProject, members: membersWithoutPassword };
     }
 
-    remove(id: number) {
-        return `This action removes a #${id} project`;
+    async remove(id: string) {
+        const existed = await this.prisma.project.findUnique({ where: { id } });
+
+        if (!existed) throw new BadRequestException('Project does not exist.');
+
+        return this.prisma.project.delete({ where: { id } });
     }
 }
