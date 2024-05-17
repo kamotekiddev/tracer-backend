@@ -1,4 +1,4 @@
-import { ArrayMinSize, IsArray, IsString, MinLength } from 'class-validator';
+import { IsArray, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateProjectDto {
     @IsString()
@@ -6,6 +6,6 @@ export class CreateProjectDto {
     name: string;
 
     @IsArray()
-    @ArrayMinSize(1)
+    @IsOptional()
     members: string[];
 }

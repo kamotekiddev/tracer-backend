@@ -19,15 +19,17 @@ export class ProjectsService {
                 'The project name is already been taken.',
             );
 
+        const memberIdsToConnect = (members || [])
+            .filter((memberId) => memberId !== ownerId)
+            .map((id) => ({ id }));
+
         return this.prisma.project.create({
             data: {
                 name,
                 ownerId: ownerId,
                 members: {
-                    connect: [
-                        { id: ownerId },
-                        ...members.map((id) => ({ id })),
-                    ],
+                    connect: [{ id: ownerId }],
+                    ...memberIdsToConnect,
                 },
             },
         });
