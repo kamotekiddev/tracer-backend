@@ -5,6 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { ProjectsModule } from './projects/projects.module';
 import { CategoriesModule } from './categories/categories.module';
+import { IssuesModule } from './issues/issues.module';
 
 @Module({
     imports: [
@@ -13,6 +14,7 @@ import { CategoriesModule } from './categories/categories.module';
         ConfigModule.forRoot(),
         ProjectsModule,
         CategoriesModule,
+        IssuesModule,
     ],
     providers: [DatabaseService],
 })
