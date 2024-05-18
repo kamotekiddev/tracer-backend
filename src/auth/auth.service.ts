@@ -101,6 +101,8 @@ export class AuthService {
             where: { refreshToken },
         });
 
+        if (!session) throw new BadRequestException('Session does not exist.');
+
         if (this.isSessionExpired(session.expires))
             throw new BadRequestException('Session already expired.');
 
