@@ -19,6 +19,7 @@ async function bootstrap() {
         }),
     );
 
+    app.enableCors({ origin: '*' });
     app.setGlobalPrefix('api');
 
     await app.listen(8000);
