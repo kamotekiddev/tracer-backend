@@ -35,8 +35,38 @@ export class ProjectsService {
         });
     }
 
-    findAll() {
-        return this.prisma.project.findMany();
+    async findAll() {
+        const projects = await this.prisma.project.findMany({
+            include: {
+                members: true,
+                owner: true,
+                categories: { include: { issues: true } },
+            },
+        });
+
+        const formattedProjects = projects.map(
+            ({ categories, members, ...project }) => {
+                const issues = categories.map((category) => category.issues);
+                const issuesCount = issues.reduce(
+                    (total, curr) => total + curr.length,
+                    0,
+                );
+
+                const owner = this.prisma.excludeProperties(project.owner, [
+                    'password',
+                ]);
+
+                return {
+                    ...project,
+                    categories: categories.length,
+                    members: members.length,
+                    issues: issuesCount,
+                    owner,
+                };
+            },
+        );
+
+        return formattedProjects;
     }
 
     async findOne(id: string) {
