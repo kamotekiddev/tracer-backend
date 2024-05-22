@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { ProjectFilter, ProjectListItem } from './projects.interface';
 
 @Injectable()
 export class ProjectsService {
@@ -35,14 +36,37 @@ export class ProjectsService {
         });
     }
 
-    async findAll() {
-        const projects = await this.prisma.project.findMany({
-            include: {
-                members: true,
-                owner: true,
-                categories: { include: { issues: true } },
-            },
-        });
+    async findAll(filter: ProjectFilter, userId: string) {
+        let projects: ProjectListItem[] = [];
+
+        if (!filter || filter === 'ALL')
+            projects = await this.prisma.project.findMany({
+                include: {
+                    members: true,
+                    owner: true,
+                    categories: { include: { issues: true } },
+                },
+            });
+
+        if ((filter = 'I_AM_MEMBER'))
+            projects = await this.prisma.project.findMany({
+                where: { members: { some: { id: userId } } },
+                include: {
+                    members: true,
+                    owner: true,
+                    categories: { include: { issues: true } },
+                },
+            });
+
+        if ((filter = 'MY_PROJECTS'))
+            projects = await this.prisma.project.findMany({
+                where: { owner: { id: userId } },
+                include: {
+                    members: true,
+                    owner: true,
+                    categories: { include: { issues: true } },
+                },
+            });
 
         const formattedProjects = projects.map(
             ({ categories, members, ...project }) => {

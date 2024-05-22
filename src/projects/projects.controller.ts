@@ -10,12 +10,13 @@ import {
     ValidationPipe,
     Request,
     ParseUUIDPipe,
+    Query,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
-import { AuthenticatedRequest } from './projects.interface';
+import { AuthenticatedRequest, ProjectFilter } from './projects.interface';
 
 @UseGuards(AuthGuard)
 @Controller('projects')
@@ -31,8 +32,11 @@ export class ProjectsController {
     }
 
     @Get()
-    findAll() {
-        return this.projectsService.findAll();
+    findAll(
+        @Query('filter') filter: ProjectFilter,
+        @Request() req: AuthenticatedRequest,
+    ) {
+        return this.projectsService.findAll(filter, req.user.userId);
     }
 
     @Get(':id')
