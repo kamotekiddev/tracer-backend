@@ -9,10 +9,15 @@ export class ProjectsService {
     constructor(private readonly prisma: DatabaseService) {}
 
     async create(ownerId: string, createProjectDto: CreateProjectDto) {
-        const { members, name } = createProjectDto;
+        const { name, ...rest } = createProjectDto;
 
-        const projectExisted = await this.prisma.project.findUnique({
-            where: { name: name },
+        const projectExisted = await this.prisma.project.findFirst({
+            where: {
+                name: {
+                    contains: name,
+                    mode: 'insensitive',
+                },
+            },
         });
 
         if (projectExisted)
@@ -20,17 +25,13 @@ export class ProjectsService {
                 'The project name is already been taken.',
             );
 
-        const memberIdsToConnect = (members || [])
-            .filter((memberId) => memberId !== ownerId)
-            .map((id) => ({ id }));
-
         return this.prisma.project.create({
             data: {
+                ...rest,
                 name,
                 ownerId: ownerId,
                 members: {
                     connect: [{ id: ownerId }],
-                    ...memberIdsToConnect,
                 },
             },
         });
