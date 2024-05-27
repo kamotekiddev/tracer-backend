@@ -97,7 +97,15 @@ export class ProjectsService {
     async findOne(id: string) {
         const project = await this.prisma.project.findUnique({
             where: { id },
-            include: { owner: true, members: true },
+            include: {
+                owner: true,
+                members: true,
+                categories: {
+                    include: {
+                        issues: { include: { reporter: true, assignee: true } },
+                    },
+                },
+            },
         });
 
         const ownerWithoutPassword = this.prisma.excludeProperties(
@@ -109,10 +117,37 @@ export class ProjectsService {
             this.prisma.excludeProperties(member, ['password']),
         );
 
+        const sanitizedCategory = project.categories.map((category) => {
+            const issues = category.issues.map(
+                ({ assignee, reporter, ...issue }) => {
+                    const sanitizedAssignee =
+                        assignee &&
+                        this.prisma.excludeProperties(assignee, ['password']);
+
+                    const sanitizedReporter = this.prisma.excludeProperties(
+                        reporter,
+                        ['password'],
+                    );
+
+                    return {
+                        ...issue,
+                        assignee: sanitizedAssignee,
+                        reporter: sanitizedReporter,
+                    };
+                },
+            );
+
+            return {
+                ...category,
+                issues,
+            };
+        });
+
         return {
             ...project,
             owner: ownerWithoutPassword,
             members: membersWithoutPassword,
+            categories: sanitizedCategory,
         };
     }
 
