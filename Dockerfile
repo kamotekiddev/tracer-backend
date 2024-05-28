@@ -5,6 +5,10 @@ WORKDIR /app
 COPY . .
 
 RUN npm install
+RUN npx prisma generate
+RUN npx prisma migrate reset
+RUN npx prisma db push
+
 
 EXPOSE 8000
 
