@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import {
     BadRequestException,
+    HttpStatus,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
@@ -47,17 +48,40 @@ export class AuthService {
         });
 
         if (userExist)
-            throw new BadRequestException('Email has already been taken.');
+            throw new BadRequestException({
+                message: [
+                    { property: 'email', message: 'Email already taken.' },
+                ],
+                statusCode: HttpStatus.BAD_REQUEST,
+            });
 
         const hashPassword = await this.encryptPassword(
             registerUserDto.password,
         );
 
-        const createdUser = await this.prisma.user.create({
+        const user = await this.prisma.user.create({
             data: { ...registerUserDto, password: hashPassword },
         });
 
-        return this.prisma.excludeProperties(createdUser, ['password']);
+        const session = await this.prisma.session.create({
+            data: {
+                accessToken: await this.generateToken(
+                    { userId: user.id, type: 'accessToken' },
+                    { expiresIn: '10h' },
+                ),
+                refreshToken: await this.generateToken(
+                    { userId: user.id, type: 'refreshToken' },
+                    { expiresIn: '7d' },
+                ),
+                expires: addDays(new Date(), 6),
+                userId: user.id,
+            },
+        });
+
+        return {
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+        };
     }
 
     async login(loginUserDto: LoginUserDto) {
