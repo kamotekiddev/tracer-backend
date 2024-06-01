@@ -54,14 +54,34 @@ model Project {
   owner      User       @relation("owner", fields: [ownerId], references: [id])
   members    User[]     @relation("member")
   categories Category[]
+  sprints    Sprint[]
+  issues     Issue[]
+}
+
+model Sprint {
+  id        String   @id @default(uuid())
+  number    Int      @default(autoincrement())
+  startDate DateTime @default(now())
+  endDate   DateTime
+
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+
+  categories Category[]
+  issues     Issue[]
 }
 
 model Category {
-  id        String  @id @default(uuid())
-  name      String
+  id   String @id @default(uuid())
+  name String
+
   project   Project @relation(fields: [projectId], references: [id])
   projectId String
-  issues    Issue[]
+
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+  sprintId String?
+
+  issues Issue[]
 }
 
 enum IssueType {
@@ -75,6 +95,7 @@ model Issue {
   title       String
   description String?
   type        IssueType
+  number      Int       @default(autoincrement())
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
@@ -84,4 +105,10 @@ model Issue {
 
   assigneeId String?
   assignee   User?   @relation("assigned_issues", fields: [assigneeId], references: [id])
+
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+  sprintId String?
+
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId String?
 }
