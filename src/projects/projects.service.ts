@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { DatabaseService } from 'src/database/database.service';
@@ -25,7 +25,7 @@ export class ProjectsService {
                 'The project name is already been taken.',
             );
 
-        return this.prisma.project.create({
+        const createdProject = await this.prisma.project.create({
             data: {
                 ...rest,
                 name,
@@ -35,6 +35,19 @@ export class ProjectsService {
                 },
             },
         });
+
+        await this.prisma.category.createMany({
+            data: [
+                { projectId: createdProject.id, name: 'TODO' },
+                { projectId: createdProject.id, name: 'IN PROGRESS' },
+                { projectId: createdProject.id, name: 'DONE' },
+            ],
+        });
+
+        return {
+            message: 'Project successfully created',
+            statusCode: HttpStatus.CREATED,
+        };
     }
 
     async findAll(filter: ProjectFilter, userId: string) {
