@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ProjectsModule } from './projects/projects.module';
 import { CategoriesModule } from './categories/categories.module';
 import { IssuesModule } from './issues/issues.module';
+import { SprintModule } from './sprints/sprints.module';
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import { IssuesModule } from './issues/issues.module';
         ProjectsModule,
         CategoriesModule,
         IssuesModule,
+        SprintModule,
     ],
     providers: [DatabaseService],
 })

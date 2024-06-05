@@ -54,8 +54,11 @@ model Project {
   owner      User       @relation("owner", fields: [ownerId], references: [id])
   members    User[]     @relation("member")
   categories Category[]
-  sprints    Sprint[]
+  sprints    Sprint[]   @relation("project_sprints")
   issues     Issue[]
+
+  currentSprint   Sprint? @relation(fields: [currentSprintId], references: [id])
+  currentSprintId String?
 }
 
 model Sprint {
@@ -63,12 +66,14 @@ model Sprint {
   number    Int      @default(autoincrement())
   startDate DateTime @default(now())
   endDate   DateTime
+  completed Boolean  @default(false)
 
   projectId String
-  project   Project @relation(fields: [projectId], references: [id])
+  project   Project @relation("project_sprints", fields: [projectId], references: [id])
 
-  categories Category[]
-  issues     Issue[]
+  categories    Category[]
+  issues        Issue[]
+  projectSprint Project[]
 }
 
 model Category {
