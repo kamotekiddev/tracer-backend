@@ -76,16 +76,27 @@ export class SprintService {
         return `This action removes a #${id} sprint`;
     }
 
-    async complete(id: string) {
-        const existing = await this.prisma.sprint.findUnique({ where: { id } });
+    async complete(sprintId: string) {
+        const existing = await this.prisma.sprint.findUnique({
+            where: { id: sprintId },
+        });
         if (!existing) throw new BadRequestException('Sprint does not exist.');
 
         if (existing.completed)
             throw new BadRequestException('Sprint already ended.');
 
-        await this.prisma.sprint.update({
-            where: { id },
-            data: { completed: true },
+        await this.prisma.$transaction(async (tx) => {
+            const updatedSprint = await tx.sprint.update({
+                where: { id: sprintId },
+                data: { completed: true },
+            });
+
+            await tx.project.update({
+                where: { id: updatedSprint.projectId },
+                data: {
+                    currentSprint: { disconnect: { id: updatedSprint.id } },
+                },
+            });
         });
 
         return {
