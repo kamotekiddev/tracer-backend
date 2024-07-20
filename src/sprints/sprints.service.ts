@@ -1,4 +1,4 @@
-import { differenceInDays, isBefore } from 'date-fns';
+import { differenceInDays, isBefore, isSameDay } from 'date-fns';
 import { BadRequestException, HttpStatus, Injectable } from '@nestjs/common';
 import { CreateSprintDto } from './dto/create-sprint.dto';
 import { UpdateSprintDto } from './dto/update-sprint.dto';
@@ -19,13 +19,16 @@ export class SprintService {
         const startDate = new Date(createSprintDto.startDate);
         const endDate = new Date(createSprintDto.endDate);
 
-        if (isBefore(new Date(), startDate))
+        if (
+            isBefore(startDate, new Date()) &&
+            !isSameDay(startDate, new Date())
+        )
             throw new BadRequestException({
                 statusCode: HttpStatus.BAD_REQUEST,
                 message: [
                     {
                         property: 'startDate',
-                        message: 'Start Date should be atleast today or later.',
+                        message: 'Should atleast today or later.',
                     },
                 ],
             });
@@ -37,12 +40,19 @@ export class SprintService {
                     {
                         property: 'endDate',
                         message:
-                            'End Date should be atleast 2 day later than start date.',
+                            'Should be atleast 2 day later than start date.',
                     },
                 ],
             });
 
-        await this.prisma.sprint.create({ data: createSprintDto });
+        const newSprint = await this.prisma.sprint.create({
+            data: createSprintDto,
+        });
+
+        await this.prisma.project.update({
+            data: { currentSprintId: newSprint.id },
+            where: { id: createSprintDto.projectId },
+        });
 
         return {
             message: 'Sprint created successfully',
