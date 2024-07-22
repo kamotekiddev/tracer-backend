@@ -118,6 +118,7 @@ export class ProjectsService {
                         issues: { include: { reporter: true, assignee: true } },
                     },
                 },
+                currentSprint: true,
             },
         });
 
