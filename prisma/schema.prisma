@@ -63,7 +63,7 @@ model Project {
 
 model Sprint {
   id        String   @id @default(uuid())
-  number    Int      @default(autoincrement())
+  number    Int
   startDate DateTime @default(now())
   endDate   DateTime
   completed Boolean  @default(false)
