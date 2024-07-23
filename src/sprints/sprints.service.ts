@@ -10,7 +10,7 @@ export class SprintService {
 
     async create(createSprintDto: CreateSprintDto) {
         const openSprint = await this.prisma.sprint.findFirst({
-            where: { completed: false },
+            where: { completed: false, projectId: createSprintDto.projectId },
         });
 
         if (openSprint)
@@ -45,8 +45,12 @@ export class SprintService {
                 ],
             });
 
+        const projectSprintsCount = await this.prisma.sprint.count({
+            where: { projectId: createSprintDto.projectId },
+        });
+
         const newSprint = await this.prisma.sprint.create({
-            data: createSprintDto,
+            data: { ...createSprintDto, number: projectSprintsCount + 1 },
         });
 
         await this.prisma.project.update({
