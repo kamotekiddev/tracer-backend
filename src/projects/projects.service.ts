@@ -213,4 +213,13 @@ export class ProjectsService {
 
         return this.prisma.project.delete({ where: { id } });
     }
+
+    async getProjectBacklogs(id: string) {
+        return this.prisma.sprint.findMany({
+            where: { projectId: id },
+            include: {
+                issues: { include: { category: true } },
+            },
+        });
+    }
 }

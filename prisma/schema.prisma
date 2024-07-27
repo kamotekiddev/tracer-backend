@@ -71,7 +71,6 @@ model Sprint {
   projectId String
   project   Project @relation("project_sprints", fields: [projectId], references: [id])
 
-  categories    Category[]
   issues        Issue[]
   projectSprint Project[]
 }
@@ -82,9 +81,6 @@ model Category {
 
   project   Project @relation(fields: [projectId], references: [id])
   projectId String
-
-  sprint   Sprint? @relation(fields: [sprintId], references: [id])
-  sprintId String?
 
   issues Issue[]
 }

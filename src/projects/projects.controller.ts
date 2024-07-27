@@ -56,4 +56,9 @@ export class ProjectsController {
     remove(@Param('id', ParseUUIDPipe) id: string) {
         return this.projectsService.remove(id);
     }
+
+    @Get(':id/backlogs')
+    getBacklogs(@Param('id', ParseUUIDPipe) id: string) {
+        return this.projectsService.getProjectBacklogs(id);
+    }
 }
