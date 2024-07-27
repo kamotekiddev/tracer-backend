@@ -12,11 +12,14 @@ export class IssuesService {
     constructor(private readonly prisma: DatabaseService) {}
 
     async create(userId: string, createIssueDto: CreateIssueDto) {
-        const { categoryId, assigneeId, ...rest } = createIssueDto;
+        const { categoryId, assigneeId, projectId, sprintId, ...rest } =
+            createIssueDto;
 
         return this.prisma.issue.create({
             data: {
                 ...rest,
+                project: { connect: { id: projectId } },
+                sprint: { connect: { id: sprintId } },
                 category: { connect: { id: categoryId } },
                 reporter: { connect: { id: userId } },
                 ...(assigneeId && {
@@ -61,7 +64,8 @@ export class IssuesService {
     }
 
     async update(id: string, updateIssueDto: UpdateIssueDto) {
-        const { categoryId, assigneeId, ...rest } = updateIssueDto;
+        const { categoryId, assigneeId, projectId, sprintId, ...rest } =
+            updateIssueDto;
 
         const existing = await this.prisma.issue.findUnique({ where: { id } });
         if (!existing) throw new BadRequestException('Issue does not exist.');
@@ -70,6 +74,12 @@ export class IssuesService {
             where: { id },
             data: {
                 ...rest,
+                ...(projectId && {
+                    project: { connect: { id: projectId } },
+                }),
+                ...(sprintId && {
+                    sprint: { connect: { id: sprintId } },
+                }),
                 ...(categoryId && {
                     category: { connect: { id: categoryId } },
                 }),

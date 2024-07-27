@@ -8,6 +8,12 @@ import {
 import { IssueType } from '../entities/issue.entity';
 
 export class CreateIssueDto {
+    @IsUUID()
+    projectId: string;
+
+    @IsUUID()
+    sprintId: string;
+
     @IsString()
     @MinLength(5)
     title: string;
