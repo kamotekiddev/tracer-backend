@@ -108,6 +108,10 @@ export class ProjectsService {
     }
 
     async findOne(id: string) {
+        const { currentSprintId } = await this.prisma.project.findUnique({
+            where: { id },
+        });
+
         const project = await this.prisma.project.findUnique({
             where: { id },
             include: {
@@ -115,7 +119,14 @@ export class ProjectsService {
                 members: true,
                 categories: {
                     include: {
-                        issues: { include: { reporter: true, assignee: true } },
+                        issues: {
+                            where: { sprintId: currentSprintId },
+                            include: {
+                                reporter: true,
+                                assignee: true,
+                                project: true,
+                            },
+                        },
                     },
                 },
                 currentSprint: true,
