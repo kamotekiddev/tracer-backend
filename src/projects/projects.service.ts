@@ -233,4 +233,17 @@ export class ProjectsService {
             },
         });
     }
+
+    async getProjectMembers(id: string) {
+        const project = await this.prisma.project.findUnique({
+            where: { id },
+            include: { members: true },
+        });
+
+        const sanitizedMembers = project.members.map((member) =>
+            this.prisma.excludeProperties(member, ['password']),
+        );
+
+        return sanitizedMembers;
+    }
 }

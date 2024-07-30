@@ -61,4 +61,9 @@ export class ProjectsController {
     getBacklogs(@Param('id', ParseUUIDPipe) id: string) {
         return this.projectsService.getProjectBacklogs(id);
     }
+
+    @Get(':id/members')
+    getProjectMembers(@Param('id', ParseUUIDPipe) id: string) {
+        return this.projectsService.getProjectMembers(id);
+    }
 }
