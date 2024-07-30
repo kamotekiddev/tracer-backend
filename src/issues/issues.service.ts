@@ -56,7 +56,12 @@ export class IssuesService {
     async findOne(id: string) {
         const issue = await this.prisma.issue.findUnique({
             where: { id },
-            include: { assignee: true, category: true, reporter: true },
+            include: {
+                assignee: true,
+                category: true,
+                reporter: true,
+                project: true,
+            },
         });
         if (!issue) throw new NotFoundException('Issue does not exist.');
 
