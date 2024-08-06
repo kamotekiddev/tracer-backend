@@ -246,4 +246,13 @@ export class ProjectsService {
 
         return sanitizedMembers;
     }
+
+    async getProjectCategories(id: string) {
+        const project = await this.prisma.project.findUnique({
+            where: { id },
+            include: { categories: true },
+        });
+
+        return project.categories;
+    }
 }

@@ -66,4 +66,9 @@ export class ProjectsController {
     getProjectMembers(@Param('id', ParseUUIDPipe) id: string) {
         return this.projectsService.getProjectMembers(id);
     }
+
+    @Get(':id/categories')
+    getProjectCategories(@Param('id', ParseUUIDPipe) id: string) {
+        return this.projectsService.getProjectCategories(id);
+    }
 }
