@@ -16,7 +16,7 @@ export class CreateIssueDto {
 
     @IsString()
     @MinLength(5)
-    title: string;
+    summary: string;
 
     @IsString()
     @IsOptional()

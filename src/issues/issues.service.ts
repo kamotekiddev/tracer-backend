@@ -63,9 +63,14 @@ export class IssuesService {
                 project: true,
             },
         });
+        const sanitizedReporterObj = this.prisma.excludeProperties(
+            issue.reporter,
+            ['password'],
+        );
+
         if (!issue) throw new NotFoundException('Issue does not exist.');
 
-        return issue;
+        return { ...issue, reporter: sanitizedReporterObj };
     }
 
     async update(id: string, updateIssueDto: UpdateIssueDto) {

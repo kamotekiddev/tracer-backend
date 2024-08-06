@@ -93,13 +93,16 @@ enum IssueType {
 
 model Issue {
   id          String    @id @default(uuid())
-  title       String
+  summary     String
   description String?
   type        IssueType
   number      Int       @default(autoincrement())
 
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updated   DateTime @updatedAt
 
   reporterId String
   reporter   User   @relation("my_reported_issues", fields: [reporterId], references: [id])
