@@ -71,4 +71,9 @@ export class ProjectsController {
     getProjectCategories(@Param('id', ParseUUIDPipe) id: string) {
         return this.projectsService.getProjectCategories(id);
     }
+
+    @Get(':id/sprints')
+    getProjectSprints(@Param('id', ParseUUIDPipe) id: string) {
+        return this.projectsService.getProjectSprints(id);
+    }
 }

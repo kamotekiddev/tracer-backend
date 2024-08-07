@@ -255,4 +255,13 @@ export class ProjectsService {
 
         return project.categories;
     }
+
+    async getProjectSprints(id: string) {
+        const projectWithSprints = await this.prisma.project.findUnique({
+            where: { id: id },
+            include: { sprints: true },
+        });
+
+        return projectWithSprints;
+    }
 }
