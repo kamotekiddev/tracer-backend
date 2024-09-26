@@ -45,7 +45,7 @@ export class IssuesController {
         @Param('id', ParseUUIDPipe) id: string,
         @Body() updateIssueDto: UpdateIssueDto,
     ) {
-        return this.issuesService.update(id, updateIssueDto);
+        return this.issuesService.updateIssueByEvent(id, updateIssueDto);
     }
 
     @Delete(':id')

@@ -6,6 +6,7 @@ import {
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { UpdateIssueDto } from './dto/update-issue.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { UpdateIssueEvent } from './entities/issue.entity';
 
 @Injectable()
 export class IssuesService {
@@ -73,31 +74,30 @@ export class IssuesService {
         return { ...issue, reporter: sanitizedReporterObj };
     }
 
-    async update(id: string, updateIssueDto: UpdateIssueDto) {
-        const { categoryId, assigneeId, projectId, sprintId, ...rest } =
-            updateIssueDto;
+    async updateIssueByEvent(id: string, updateIssueDto: UpdateIssueDto) {
+        const { updateEvent, ...data } = updateIssueDto;
+
+        let updateData: Partial<UpdateIssueDto> = {};
 
         const existing = await this.prisma.issue.findUnique({ where: { id } });
         if (!existing) throw new BadRequestException('Issue does not exist.');
 
-        return this.prisma.issue.update({
-            where: { id },
-            data: {
-                ...rest,
-                ...(projectId && {
-                    project: { connect: { id: projectId } },
-                }),
-                ...(sprintId && {
-                    sprint: { connect: { id: sprintId } },
-                }),
-                ...(categoryId && {
-                    category: { connect: { id: categoryId } },
-                }),
-                ...(assigneeId && {
-                    assignee: { connect: { id: assigneeId } },
-                }),
-            },
-        });
+        if (updateEvent === UpdateIssueEvent.DESCRIPTION_CHANGE)
+            updateData = { description: data.description };
+
+        if (updateEvent === UpdateIssueEvent.CATEGORY_CHANGE)
+            updateData = { categoryId: data.categoryId };
+
+        if (updateEvent === UpdateIssueEvent.SUMMARY_CHANGE)
+            updateData = { summary: data.summary };
+
+        if (updateEvent === UpdateIssueEvent.TYPE_CHANGE)
+            updateData = { type: data.type };
+
+        if (updateEvent === UpdateIssueEvent.ASSIGNEE_CHANGE)
+            updateData = { assigneeId: data.assigneeId };
+
+        return this.prisma.issue.update({ where: { id }, data: updateData });
     }
 
     async remove(id: string) {
