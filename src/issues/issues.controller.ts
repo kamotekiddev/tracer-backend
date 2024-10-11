@@ -65,4 +65,9 @@ export class IssuesController {
     remove(@Param('id') id: string) {
         return this.issuesService.remove(id);
     }
+
+    @Get(':id/history')
+    getIssueHistory(@Param('id', ParseUUIDPipe) id: string) {
+        return this.issuesService.getIssueHistory(id);
+    }
 }

@@ -143,4 +143,32 @@ export class IssuesService {
 
         return this.prisma.issue.delete({ where: { id } });
     }
+
+    async getIssueHistory(issueId: string) {
+        const existing = await this.prisma.issue.findUnique({
+            where: { id: issueId },
+        });
+
+        if (!existing)
+            throw new BadRequestException('This issue does not exist.');
+
+        const issueHistory = await this.prisma.issueHistory.findMany({
+            where: { issueId },
+            include: { user: true },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        const sanitizedIssueHistory = issueHistory.map(({ user, ...issue }) => {
+            const sanitizedUser = this.prisma.excludeProperties(user, [
+                'password',
+            ]);
+
+            return {
+                ...issue,
+                user: sanitizedUser,
+            };
+        });
+
+        return sanitizedIssueHistory;
+    }
 }
