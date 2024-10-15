@@ -82,6 +82,7 @@ export class IssuesService {
         updaterId: string,
     ) {
         const { updateEvent, ...data } = updateIssueDto;
+        console.log('event fired');
 
         let newData: Partial<UpdateIssueDto> = {};
         let oldData: Partial<Issue> = {};
@@ -126,6 +127,17 @@ export class IssuesService {
                     userId: updaterId,
                 },
             });
+
+            if (
+                updateEvent === UpdateIssueEvent.ASSIGNEE_CHANGE &&
+                !data.assigneeId
+            )
+                return await tx.issue.update({
+                    where: { id: issueId },
+                    data: {
+                        assignee: { disconnect: { id: existing.assigneeId } },
+                    },
+                });
 
             await tx.issue.update({ where: { id: issueId }, data: newData });
         });
