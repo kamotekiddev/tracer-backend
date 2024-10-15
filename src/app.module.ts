@@ -7,6 +7,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { CategoriesModule } from './categories/categories.module';
 import { IssuesModule } from './issues/issues.module';
 import { SprintModule } from './sprints/sprints.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
     imports: [
@@ -17,6 +18,7 @@ import { SprintModule } from './sprints/sprints.module';
         CategoriesModule,
         IssuesModule,
         SprintModule,
+        UsersModule,
     ],
     providers: [DatabaseService],
 })

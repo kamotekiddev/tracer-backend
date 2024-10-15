@@ -4,6 +4,7 @@ import {
     HttpStatus,
     Injectable,
     NotFoundException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -128,7 +129,7 @@ export class AuthService {
         if (!session) throw new BadRequestException('Session does not exist.');
 
         if (this.isSessionExpired(session.expires))
-            throw new BadRequestException('Session already expired.');
+            throw new UnauthorizedException('Session already expired.');
 
         const { accessToken } = await this.prisma.session.update({
             where: { id: session.id },

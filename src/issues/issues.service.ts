@@ -1,11 +1,14 @@
 import {
     BadRequestException,
+    HttpStatus,
     Injectable,
     NotFoundException,
 } from '@nestjs/common';
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { UpdateIssueDto } from './dto/update-issue.dto';
 import { DatabaseService } from 'src/database/database.service';
+import { UpdateIssueEvent } from './entities/issue.entity';
+import { Issue } from '@prisma/client';
 
 @Injectable()
 export class IssuesService {
@@ -73,31 +76,76 @@ export class IssuesService {
         return { ...issue, reporter: sanitizedReporterObj };
     }
 
-    async update(id: string, updateIssueDto: UpdateIssueDto) {
-        const { categoryId, assigneeId, projectId, sprintId, ...rest } =
-            updateIssueDto;
+    async updateIssueByEvent(
+        issueId: string,
+        updateIssueDto: UpdateIssueDto,
+        updaterId: string,
+    ) {
+        const { updateEvent, ...data } = updateIssueDto;
+        console.log('event fired');
 
-        const existing = await this.prisma.issue.findUnique({ where: { id } });
+        let newData: Partial<UpdateIssueDto> = {};
+        let oldData: Partial<Issue> = {};
+
+        const existing = await this.prisma.issue.findUnique({
+            where: { id: issueId },
+        });
         if (!existing) throw new BadRequestException('Issue does not exist.');
 
-        return this.prisma.issue.update({
-            where: { id },
-            data: {
-                ...rest,
-                ...(projectId && {
-                    project: { connect: { id: projectId } },
-                }),
-                ...(sprintId && {
-                    sprint: { connect: { id: sprintId } },
-                }),
-                ...(categoryId && {
-                    category: { connect: { id: categoryId } },
-                }),
-                ...(assigneeId && {
-                    assignee: { connect: { id: assigneeId } },
-                }),
-            },
+        if (updateEvent === UpdateIssueEvent.DESCRIPTION_CHANGE) {
+            oldData = { description: existing.description };
+            newData = { description: data.description };
+        }
+
+        if (updateEvent === UpdateIssueEvent.CATEGORY_CHANGE) {
+            oldData = { categoryId: existing.categoryId };
+            newData = { categoryId: data.categoryId };
+        }
+
+        if (updateEvent === UpdateIssueEvent.SUMMARY_CHANGE) {
+            oldData = { summary: existing.summary };
+            newData = { summary: data.summary };
+        }
+
+        if (updateEvent === UpdateIssueEvent.TYPE_CHANGE) {
+            oldData = { type: existing.type };
+            newData = { type: data.type };
+        }
+
+        if (updateEvent === UpdateIssueEvent.ASSIGNEE_CHANGE) {
+            oldData = { assigneeId: existing.assigneeId };
+            newData = { assigneeId: data.assigneeId };
+        }
+
+        await this.prisma.$transaction(async (tx) => {
+            await tx.issueHistory.create({
+                data: {
+                    issueId,
+                    changes: JSON.stringify(newData),
+                    event: updateEvent,
+                    oldData: JSON.stringify(oldData),
+                    userId: updaterId,
+                },
+            });
+
+            if (
+                updateEvent === UpdateIssueEvent.ASSIGNEE_CHANGE &&
+                !data.assigneeId
+            )
+                return await tx.issue.update({
+                    where: { id: issueId },
+                    data: {
+                        assignee: { disconnect: { id: existing.assigneeId } },
+                    },
+                });
+
+            await tx.issue.update({ where: { id: issueId }, data: newData });
         });
+
+        return {
+            message: 'Issue successfully been updated.',
+            statusCode: HttpStatus.OK,
+        };
     }
 
     async remove(id: string) {
@@ -106,5 +154,33 @@ export class IssuesService {
         if (!existing) throw new BadRequestException('Issue does not exist.');
 
         return this.prisma.issue.delete({ where: { id } });
+    }
+
+    async getIssueHistory(issueId: string) {
+        const existing = await this.prisma.issue.findUnique({
+            where: { id: issueId },
+        });
+
+        if (!existing)
+            throw new BadRequestException('This issue does not exist.');
+
+        const issueHistory = await this.prisma.issueHistory.findMany({
+            where: { issueId },
+            include: { user: true },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        const sanitizedIssueHistory = issueHistory.map(({ user, ...issue }) => {
+            const sanitizedUser = this.prisma.excludeProperties(user, [
+                'password',
+            ]);
+
+            return {
+                ...issue,
+                user: sanitizedUser,
+            };
+        });
+
+        return sanitizedIssueHistory;
     }
 }
