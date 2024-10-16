@@ -29,7 +29,8 @@ model User {
   projectsAsMember Project[]      @relation("member")
   reportedIssues   Issue[]        @relation("my_reported_issues")
   assignedIssues   Issue[]        @relation("assigned_issues")
-  IssueHistory     IssueHistory[]
+  issueHistory     IssueHistory[]
+  issueComments    IssueComment[]
 }
 
 model Session {
@@ -117,7 +118,8 @@ model Issue {
   project   Project? @relation(fields: [projectId], references: [id])
   projectId String?
 
-  history IssueHistory[]
+  history  IssueHistory[]
+  comments IssueComment[]
 }
 
 enum IssueEvent {
@@ -139,6 +141,18 @@ model IssueHistory {
 
   userId String
   user   User   @relation(fields: [userId], references: [id])
+
+  issueId String
+  issue   Issue  @relation(fields: [issueId], references: [id])
+}
+
+model IssueComment {
+  id     String  @id @default(uuid())
+  text   String?
+  photos String?
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
 
   issueId String
   issue   Issue  @relation(fields: [issueId], references: [id])
