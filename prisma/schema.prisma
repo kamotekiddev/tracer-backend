@@ -147,9 +147,11 @@ model IssueHistory {
 }
 
 model IssueComment {
-  id     String  @id @default(uuid())
-  text   String?
-  photos String?
+  id        String   @id @default(uuid())
+  text      String?
+  photos    String[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   authorId String
   author   User   @relation(fields: [authorId], references: [id])
