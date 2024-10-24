@@ -1,3 +1,5 @@
+import { JwtService } from '@nestjs/jwt';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
     Controller,
     Get,
@@ -11,13 +13,16 @@ import {
     ValidationPipe,
     Request,
     Headers,
+    UseInterceptors,
+    UploadedFiles,
 } from '@nestjs/common';
+
+import { CommentIssueDto } from './dto/comment-issue.dto';
 import { IssuesService } from './issues.service';
 import { CreateIssueDto } from './dto/create-issue.dto';
 import { UpdateIssueDto } from './dto/update-issue.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { AuthenticatedRequest } from 'src/projects/projects.interface';
-import { JwtService } from '@nestjs/jwt';
 
 @UseGuards(AuthGuard)
 @Controller('issues')
@@ -69,5 +74,15 @@ export class IssuesController {
     @Get(':id/history')
     getIssueHistory(@Param('id', ParseUUIDPipe) id: string) {
         return this.issuesService.getIssueHistory(id);
+    }
+
+    @Post(':id/comment')
+    @UseInterceptors(FilesInterceptor('photos'))
+    commentOnIssue(
+        @Param('id', ParseUUIDPipe) id: string,
+        @Body() commentDto: CommentIssueDto,
+        @UploadedFiles() photos: Express.Multer.File[],
+    ) {
+        return this.issuesService.comment(id, commentDto, photos);
     }
 }

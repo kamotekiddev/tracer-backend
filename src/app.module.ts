@@ -8,6 +8,8 @@ import { CategoriesModule } from './categories/categories.module';
 import { IssuesModule } from './issues/issues.module';
 import { SprintModule } from './sprints/sprints.module';
 import { UsersModule } from './users/users.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { CloudinaryService } from './cloudinary/cloudinary.service';
 
 @Module({
     imports: [
@@ -19,7 +21,8 @@ import { UsersModule } from './users/users.module';
         IssuesModule,
         SprintModule,
         UsersModule,
+        CloudinaryModule,
     ],
-    providers: [DatabaseService],
+    providers: [DatabaseService, CloudinaryService],
 })
 export class AppModule {}
