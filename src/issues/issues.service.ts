@@ -191,10 +191,12 @@ export class IssuesService {
 
     async comment(
         issueId: string,
-        commentIssueDto: CommentIssueDto,
-        photos: Express.Multer.File[],
+        commentIssueDto: CommentIssueDto & {
+            authorId: string;
+            photos: Express.Multer.File[];
+        },
     ) {
-        const { authorId, text } = commentIssueDto;
+        const { authorId, text, photos } = commentIssueDto;
         const notPhotosAttached = !photos || !photos.length;
 
         const issueExists = await this.prisma.issue.findUnique({
@@ -225,10 +227,16 @@ export class IssuesService {
         });
     }
 
-    getComments(issueId: string) {
-        return this.prisma.issueComment.findMany({
+    async getComments(issueId: string) {
+        const comments = await this.prisma.issueComment.findMany({
             where: { issueId },
+            include: { author: true },
             orderBy: { createdAt: 'desc' },
         });
+
+        return comments.map((comment) => ({
+            ...comment,
+            author: this.prisma.excludeProperties(comment.author, ['password']),
+        }));
     }
 }

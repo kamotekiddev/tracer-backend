@@ -82,8 +82,16 @@ export class IssuesController {
         @Param('id', ParseUUIDPipe) id: string,
         @Body() commentDto: CommentIssueDto,
         @UploadedFiles() photos: Express.Multer.File[],
+        @Headers() headers: any,
     ) {
-        return this.issuesService.comment(id, commentDto, photos);
+        const [, token] = headers?.authorization?.split(' ') ?? [];
+        const { userId }: { userId: string } = this.jwtService.decode(token);
+
+        return this.issuesService.comment(id, {
+            ...commentDto,
+            authorId: userId,
+            photos,
+        });
     }
 
     @Get(':id/comments')
