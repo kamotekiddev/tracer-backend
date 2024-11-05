@@ -222,7 +222,7 @@ export class IssuesService {
                 text,
                 issueId,
                 authorId,
-                photos: uploadResponse.map(({ url }) => url),
+                photos: uploadResponse.map(({ secure_url }) => secure_url),
             },
         });
     }
