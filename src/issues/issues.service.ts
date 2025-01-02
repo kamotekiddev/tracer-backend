@@ -87,7 +87,6 @@ export class IssuesService {
         updaterId: string,
     ) {
         const { updateEvent, ...data } = updateIssueDto;
-        console.log('event fired');
 
         let newData: Partial<UpdateIssueDto> = {};
         let oldData: Partial<Issue> = {};
@@ -120,6 +119,11 @@ export class IssuesService {
         if (updateEvent === UpdateIssueEvent.ASSIGNEE_CHANGE) {
             oldData = { assigneeId: existing.assigneeId };
             newData = { assigneeId: data.assigneeId };
+        }
+
+        if (updateEvent === UpdateIssueEvent.SPRINT_CHANGE) {
+            oldData = { sprintId: existing.sprintId };
+            newData = { sprintId: data.sprintId };
         }
 
         await this.prisma.$transaction(async (tx) => {
