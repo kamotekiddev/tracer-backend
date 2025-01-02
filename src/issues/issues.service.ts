@@ -9,10 +9,15 @@ import { UpdateIssueDto } from './dto/update-issue.dto';
 import { DatabaseService } from 'src/database/database.service';
 import { UpdateIssueEvent } from './entities/issue.entity';
 import { Issue } from '@prisma/client';
+import { CommentIssueDto } from './dto/comment-issue.dto';
+import { CloudinaryService } from 'src/cloudinary/cloudinary.service';
 
 @Injectable()
 export class IssuesService {
-    constructor(private readonly prisma: DatabaseService) {}
+    constructor(
+        private readonly prisma: DatabaseService,
+        private readonly cloudinary: CloudinaryService,
+    ) {}
 
     async create(userId: string, createIssueDto: CreateIssueDto) {
         const { categoryId, assigneeId, projectId, sprintId, ...rest } =
@@ -182,5 +187,56 @@ export class IssuesService {
         });
 
         return sanitizedIssueHistory;
+    }
+
+    async comment(
+        issueId: string,
+        commentIssueDto: CommentIssueDto & {
+            authorId: string;
+            photos: Express.Multer.File[];
+        },
+    ) {
+        const { authorId, text, photos } = commentIssueDto;
+        const notPhotosAttached = !photos || !photos.length;
+
+        const issueExists = await this.prisma.issue.findUnique({
+            where: { id: issueId },
+        });
+
+        if (!issueExists) throw new BadRequestException('Issue does not exist');
+
+        if (notPhotosAttached) {
+            return this.prisma.issueComment.create({
+                data: {
+                    text,
+                    issueId,
+                    authorId,
+                },
+            });
+        }
+
+        const uploadResponse = await this.cloudinary.uploadFiles(photos);
+
+        return this.prisma.issueComment.create({
+            data: {
+                text,
+                issueId,
+                authorId,
+                photos: uploadResponse.map(({ secure_url }) => secure_url),
+            },
+        });
+    }
+
+    async getComments(issueId: string) {
+        const comments = await this.prisma.issueComment.findMany({
+            where: { issueId },
+            include: { author: true },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        return comments.map((comment) => ({
+            ...comment,
+            author: this.prisma.excludeProperties(comment.author, ['password']),
+        }));
     }
 }
